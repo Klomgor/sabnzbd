@@ -4,7 +4,7 @@ setuptools
 selenium
 requests
 pyfakefs>=5.6.0
-werkzeug<2.1.0 # Breaks httpbin in newer versions
+werkzeug<3.2.0 # Breaks httpbin in newer versions
 pytest-httpbin
 pytest-httpserver
 flaky
