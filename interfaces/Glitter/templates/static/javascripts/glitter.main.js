@@ -920,7 +920,7 @@ function ViewModel() {
         callAPI({
             mode: "status",
             name: $(htmlElement.currentTarget).data('action'),
-            value: $("<div/>").html(folder).text()
+            value: folder
         }).then(function() {
             // Refresh
             self.loadStatusInfo(true, true)
