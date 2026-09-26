@@ -34,6 +34,7 @@ from sabnzbd.constants import ASSEMBLER_MAX_OPEN_WRITERS, GIGI, Status
 from sabnzbd.filesystem import Diskspace
 from sabnzbd.misc import pp_to_opts
 from sabnzbd.nzb import Article, NzbFile, NzbObject
+from tests.testhelper import make_mock_nzo
 
 
 class TestAssembler:
@@ -368,11 +369,7 @@ class TestDiskspaceCheck:
 
     @pytest.fixture(autouse=True)
     def setup_mocks(self):
-        self.nzo = mock.Mock()
-        self.nzo.bytes = int(2 * GIGI)
-        self.nzo.bytes_tried = 0
-        self.nzo.bytes_par2 = 0
-        self.nzo.unpack = True
+        self.nzo = make_mock_nzo(bytes=int(2 * GIGI), unpack=True)
 
         self.nzf = mock.Mock()
         self.nzf.bytes = int(0.5 * GIGI)
@@ -555,9 +552,7 @@ class TestDiskspaceCheckScenarios:
         disk_free_gb is the free space on the download device *before* the job started; the bytes
         downloaded so far are subtracted from it. On a single-device layout the complete dir sees
         that same reduced figure, because the partially downloaded job is already occupying it."""
-        nzo = mock.Mock()
-        nzo.bytes = int(job_gb * GIGI)
-        nzo.bytes_par2 = int(par2_gb * GIGI)
+        nzo = make_mock_nzo(bytes=int(job_gb * GIGI), bytes_par2=int(par2_gb * GIGI))
         nzo.bytes_tried = int((nzo.bytes - nzo.bytes_par2) * progress)
         nzo.repair, nzo.unpack, nzo.delete = pp_to_opts(pp)
 

@@ -35,7 +35,7 @@ from sabnzbd.config import ConfigCat, ConfigSorter
 from sabnzbd.filesystem import clip_path, globber_full
 from sabnzbd.misc import sort_to_opts
 from sabnzbd.nzb import NzbObject
-from tests.testhelper import SAB_CACHE_DIR, SAB_DATA_DIR
+from tests.testhelper import SAB_CACHE_DIR, SAB_DATA_DIR, make_mock_nzo
 
 
 @pytest.mark.usefixtures("clean_cache_dir")
@@ -60,9 +60,7 @@ class TestPostProc:
             pytest.fail("Could not create copy of files for rar_renamer")
 
         # And now let the magic happen:
-        nzo = mock.Mock()
-        nzo.final_name = "somedownloadname"
-        nzo.download_path = workingdir
+        nzo = make_mock_nzo(final_name="somedownloadname", download_path=workingdir)
         number_renamed_files = postproc.rar_renamer(nzo)
 
         # run check on the resulting files
@@ -189,10 +187,7 @@ class TestPostProc:
             assert sabnzbd.config.CONFIG.database["categories"][category]
 
         # Mock a minimal nzo, required as function input
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "FOSS.Rules.S23E06.2160p-SABnzbd"
-        fake_nzo.cat = category
-        fake_nzo.nzo_info = {}  # Placeholder to prevent a crash in sorting.get_titles()
+        fake_nzo = make_mock_nzo(final_name="FOSS.Rules.S23E06.2160p-SABnzbd", cat=category)
 
         def _func():
             (
@@ -388,10 +383,7 @@ class TestRemoveUnwantedFiles:
 
     @staticmethod
     def _fake_nzo(unwanted_ext=0):
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "TestDownload"
-        fake_nzo.unwanted_ext = unwanted_ext
-        return fake_nzo
+        return make_mock_nzo(final_name="TestDownload", unwanted_ext=unwanted_ext)
 
     @pytest.mark.config({"unwanted_extensions": ["exe"], "action_on_unwanted_extensions": 2})
     def test_remove_unwanted_files_only_tracked_files(self):
@@ -473,13 +465,14 @@ class TestNzbOnlyDownload:
     def test_process_nzb_only_download_single_nzb(self, mock_listdir, mock_process_single_nzb):
         """Test process_nzb_only_download with a single NZB file"""
         # Setup mock NZO
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "TestDownload"
-        fake_nzo.pp = 3
-        fake_nzo.script = "test_script.py"
-        fake_nzo.cat = "movies"
-        fake_nzo.url = "http://example.com/test.nzb"
-        fake_nzo.priority = 0
+        fake_nzo = make_mock_nzo(
+            final_name="TestDownload",
+            pp=3,
+            script="test_script.py",
+            cat="movies",
+            url="http://example.com/test.nzb",
+            priority=0,
+        )
 
         # Mock single NZB file
         workdir = os.path.join(SAB_CACHE_DIR, "test_workdir")
@@ -510,13 +503,14 @@ class TestNzbOnlyDownload:
     def test_process_nzb_only_download_multiple_nzbs(self, mock_listdir, mock_process_single_nzb):
         """Test process_nzb_only_download with multiple NZB files"""
         # Setup mock NZO
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "TestDownload"
-        fake_nzo.pp = 2
-        fake_nzo.script = None
-        fake_nzo.cat = "tv"
-        fake_nzo.url = "http://example.com/test.nzb"
-        fake_nzo.priority = 1
+        fake_nzo = make_mock_nzo(
+            final_name="TestDownload",
+            pp=2,
+            script=None,
+            cat="tv",
+            url="http://example.com/test.nzb",
+            priority=1,
+        )
 
         # Mock multiple NZB files
         workdir = os.path.join(SAB_CACHE_DIR, "test_workdir")
@@ -560,8 +554,7 @@ class TestNzbOnlyDownload:
     def test_process_nzb_only_download_mixed_files(self, mock_listdir, mock_process_single_nzb):
         """Test process_nzb_only_download with mixed file types returns None"""
         # Setup mock NZO
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "TestDownload"
+        fake_nzo = make_mock_nzo(final_name="TestDownload")
 
         # Mock mixed files (NZB and non-NZB)
         workdir = os.path.join(SAB_CACHE_DIR, "test_workdir")
@@ -584,8 +577,7 @@ class TestNzbOnlyDownload:
     def test_process_nzb_only_download_empty_directory(self, mock_listdir, mock_process_single_nzb):
         """Test process_nzb_only_download with empty directory returns None"""
         # Setup mock NZO
-        fake_nzo = mock.Mock()
-        fake_nzo.final_name = "TestDownload"
+        fake_nzo = make_mock_nzo(final_name="TestDownload")
 
         # Mock empty directory
         workdir = os.path.join(SAB_CACHE_DIR, "test_workdir")
@@ -606,22 +598,18 @@ class TestProcessJobMissingArticles:
 
     @staticmethod
     def _make_nzo(bytes_missing: int, extrapars: dict, unpack: bool = False) -> mock.Mock:
-        nzo = mock.Mock()
-        nzo.fail_msg = ""
-        nzo.bytes = 10000
-        nzo.bytes_par2 = 0
-        nzo.bytes_missing = bytes_missing
-        nzo.bad_articles = 1 if bytes_missing else 0
+        nzo = make_mock_nzo(
+            bytes=10000,
+            bytes_missing=bytes_missing,
+            bad_articles=1 if bytes_missing else 0,
+            extrapars=extrapars,
+            repair=True,
+            unpack=unpack,
+            script="",
+            final_name="test_job",
+            pp_active=True,
+        )
         nzo.check_availability_ratio = functools.partial(NzbObject.check_availability_ratio, nzo)
-        nzo.extrapars = extrapars
-        nzo.repair = True
-        nzo.unpack = unpack
-        nzo.delete = False
-        nzo.precheck = False
-        nzo.direct_unpacker = None
-        nzo.script = ""
-        nzo.final_name = "test_job"
-        nzo.download_path = SAB_CACHE_DIR
         return nzo
 
     @staticmethod
